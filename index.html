@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Funtap Store</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'funtap-orange': '#FF6600',
+                        'funtap-orange-dark': '#E65C00',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="max-w-md mx-auto bg-white min-h-screen">
+        <header class="bg-funtap-orange text-white p-4">
+            <h1 class="text-2xl font-bold">Funtap Store</h1>
+        </header>
+
+        <nav id="categories" class="p-4 flex flex-wrap gap-2">
+            <!-- Categories will be added here -->
+        </nav>
+
+        <main id="content" class="p-4">
+            <!-- Products or cart will be displayed here -->
+        </main>
+
+        <footer class="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
+            <button id="viewCart" class="w-full bg-funtap-orange text-white py-2 px-4 rounded hover:bg-funtap-orange-dark transition duration-300">
+                Xem giỏ hàng (<span id="cartCount">0</span>)
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Simulated data (in reality, this would come from an API)
+        const categories = [
+            { id: 1, name: "Gói Even" },
+            { id: 2, name: "Gói Funstore" },
+            { id: 3, name: "Gói Nạp Thường" },
+            { id: 4, name: "Khuyến mãi" }
+        ];
+
+        const products = [
+            { id: 1, categoryId: 1, name: "Gói Even", price: 150000, image: "/api/placeholder/100/100" },
+            { id: 2, categoryId: 2, name: "Gói Funstore", price: 250000, image: "/api/placeholder/100/100" },
+            { id: 3, categoryId: 3, name: "Gói Nạp Thường", price: 500000, image: "/api/placeholder/100/100" },
+            { id: 4, categoryId: 4, name: "Khuyến mãi", price: 350000, image: "/api/placeholder/100/100" }
+        ];
+
+        let cart = [];
+
+        function renderCategories() {
+            const categoriesEl = document.getElementById('categories');
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.className = 'bg-funtap-orange text-white py-1 px-3 rounded hover:bg-funtap-orange-dark transition duration-300';
+                button.textContent = category.name;
+                button.onclick = () => showProducts(category.id);
+                categoriesEl.appendChild(button);
+            });
+        }
+
+        function showProducts(categoryId) {
+            const content = document.getElementById('content');
+            content.innerHTML = '';
+            const categoryProducts = products.filter(p => p.categoryId === categoryId);
+            categoryProducts.forEach(product => {
+                const productEl = document.createElement('div');
+                productEl.className = 'flex items-center justify-between mb-4 border-b pb-2';
+                productEl.innerHTML = `
+                    <div class="flex items-center">
+                        <img src="${product.image}" alt="${product.name}" class="w-16 h-16 object-cover mr-4">
+                        <div>
+                            <h3 class="font-bold">${product.name}</h3>
+                            <p>${product.price.toLocaleString('vi-VN')} VND</p>
+                        </div>
+                    </div>
+                    <button class="bg-funtap-orange text-white py-1 px-3 rounded hover:bg-funtap-orange-dark transition duration-300" onclick="addToCart(${product.id})">
+                        Thêm
+                    </button>
+                `;
+                content.appendChild(productEl);
+            });
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                cart.push(product);
+                updateCartCount();
+            }
+        }
+
+        function updateCartCount() {
+            document.getElementById('cartCount').textContent = cart.length;
+        }
+
+        function showCart() {
+            const content = document.getElementById('content');
+            content.innerHTML = '<h2 class="text-xl font-bold mb-4">Giỏ hàng</h2>';
+            if (cart.length === 0) {
+                content.innerHTML += '<p>Giỏ hàng trống</p>';
+            } else {
+                let total = 0;
+                cart.forEach(item => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'flex justify-between items-center mb-2';
+                    itemEl.innerHTML = `
+                        <span>${item.name}</span>
+                        <span>${item.price.toLocaleString('vi-VN')} VND</span>
+                    `;
+                    content.appendChild(itemEl);
+                    total += item.price;
+                });
+                const totalEl = document.createElement('div');
+                totalEl.className = 'font-bold text-right mt-4';
+                totalEl.textContent = `Tổng cộng: ${total.toLocaleString('vi-VN')} VND`;
+                content.appendChild(totalEl);
+                const checkoutBtn = document.createElement('button');
+                checkoutBtn.className = 'w-full bg-funtap-orange text-white py-2 px-4 rounded mt-4 hover:bg-funtap-orange-dark transition duration-300';
+                checkoutBtn.textContent = 'Thanh toán';
+                checkoutBtn.onclick = checkout;
+                content.appendChild(checkoutBtn);
+            }
+        }
+
+        function checkout() {
+            // In a real app, you would send the order to your server here
+            alert('Cảm ơn bạn đã đặt hàng!');
+            tg.sendData(JSON.stringify({action: 'checkout', items: cart}));
+            cart = [];
+            updateCartCount();
+            showCart();
+        }
+
+        document.getElementById('viewCart').addEventListener('click', showCart);
+
+        // Initialize the app
+        renderCategories();
+        showProducts(1); // Show products from the first category by default
+    </script>
+</body>
+</html>
